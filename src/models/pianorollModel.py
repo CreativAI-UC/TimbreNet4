@@ -1,9 +1,18 @@
 from tensorflow.keras.layers import Input, Dense, Lambda, BatchNormalization, Dropout, ReLU
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as keras_backend
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
 
+import io
 import os
+import json
+import time
+import pickle
+import datetime
+import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 class PianoRollModel():
 
@@ -486,7 +495,7 @@ class PianoRollModel():
         plt.colorbar(p5,ax=ax[0,2])
 
         # Clean Reconstructed
-        p6 = ax[1,2].imshow(self.clean_pianoroll(recon),, cmap='hot')
+        p6 = ax[1,2].imshow(self.clean_pianoroll(recon), cmap='hot')
         p6_t = ax[1,2].title.set_text('Clean Reconstructed')
         plt.colorbar(p6,ax=ax[1,2])
 
