@@ -168,8 +168,365 @@ class PianoRollModel():
         # MODEL FULL
         self.full_model = Model(inputs=(self.model_input), outputs=(self.model_output), name='full_model')
 
+    def pre_process_filename_to_roll(self, path):
+        '''
+        Fuction that preprocess  files to get pianorolls and metadata
+        '''
+        notes, volume = self.pre_process_filename_get_notes_volume_vectors(path)
+        roll = self.pre_process_notes_volume_vectors_to_roll(notes, volume)
+        return (roll), (roll)
+
+    def pre_process_filename_get_notes_volume_vectors(self, path):
+        '''
+        Function that makes the metadata inputs (notes and olume) from the filename
+        '''
+
+        # Get metadata info from filename
+        folders       = tf.strings.split(path, '/')
+        file_name_wav = folders[-1]
+        file_name     = tf.strings.split(file_name_wav,'.')[0]
+        meta_data     = tf.strings.split(file_name, '_')
+        octave        = meta_data[1]
+        base_note     = meta_data[2]
+        triad         = meta_data[3]
+        volume_meta   = meta_data[4]
+
+        # Make the 1/0 vectors for the model inputs
+        # Notes
+        first = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_1.lookup(triad), 44)
+        third = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_3.lookup(triad), 44)
+        fifth = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_5.lookup(triad), 44)
+        notes = first + third + fifth
+        notes = tf.reshape(notes,[44])
+
+        # Volumes
+        volume = tf.one_hot(self.volume_structure.lookup(volume_meta), 3)
+        volume = tf.reshape(volume,[3])
+
+        return notes, volume
+
+    def pre_process_notes_volume_vectors_to_roll(self, notes, volume):
+        '''
+        Function that makes the pianorrolls from the filename
+        '''
+        amplitude = ((tf.cast(tf.math.argmax(volume[:,0,0]),tf.float32)+1)/3) # Piano is 0.33, metsoforte is 0.66 forte is 1
+        pianoroll = notes * amplitude
+        return pianoroll
+
+    def load_weights(self, filepath):
+        '''
+        Function for loading weights from a trained model
+        '''
+        self.full_model.load_weights(filepath)
+
+    def save_model_params(self, folder):
+        '''
+        Function that saves all the model parameters both in human readable text and machine readable text
+        '''
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            os.makedirs(os.path.join(folder, 'weights'))
+         
+        # Machine readable save
+        with open(os.path.join(folder, 'params.pkl'), 'wb') as f:
+            pickle.dump(json.loads('"'+str(self.__dict__)+'"'), f)
+        
+        # Human readable save   
+        with open(os.path.join(folder, 'params.txt'), 'w') as f:
+            for key in self.__dict__.keys():
+                f.write('{}: {}\n'.format(key, str(self.__dict__[key])))
+
+    def compute_loss(self, train_data_point):
+        '''
+        Function that returns the total loss of the model
+        '''
+        train_input, y_true = train_data_point
+        mu, log_var         = self.encoder(train_input)
+        z                   = self.sampler((mu, log_var))
+        y_pred              = self.decoder(z) 
+
+        def vae_r_loss(y_true_r, y_pred_r):
+            '''
+            Fuction for specgram reconstruction losss
+            '''
+            r_loss = keras_backend.sum(keras_backend.square(y_true_mel_r - y_pred_mel_r), axis = [1])
+            return r_loss
+
+        def vae_kl_loss():
+            '''
+            Function for KL Divergence loss
+            '''
+            kl_loss =  -0.5 * keras_backend.sum(1 + log_var - keras_backend.square(mu) - keras_backend.exp(log_var), axis = 1)
+            return kl_loss
+
+        def vae_total_loss(y_true, y_pred):
+            '''
+            Function for calculating the mel spectrogram loss includon  reconstruction and KL Divergence
+            '''
+            r_loss = vae_r_loss(y_true, y_pred)
+            kl_loss = vae_kl_loss()
+            total_loss = (self.r_loss_factor * r_loss) + kl_loss
+            return  r_loss, kl_loss, total_loss
+
+        r_loss, kl_loss, total_loss = vae_mel_loss(y_true_mel, y_pred_mel)
+
+        return total_loss, r_loss, kl_loss
+
+    @tf.function
+    def train_step(self, train_data_point, optimizer):
+        """
+        Executes one training step and returns the loss.
+        This function computes the loss and gradients, and uses the latter to update the model's parameters.
+        """
+        with tf.GradientTape() as tape:
+            total_loss, r_loss, kl_loss = self.compute_loss(train_data_point)
+        gradients = tape.gradient(total_loss, self.full_model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, self.full_model.trainable_variables))
+        return total_loss, r_loss, kl_loss
+
+    def train_with_generator(self, train_data_flow, val_data_flow, epochs, initial_epoch, learning_rate, r_loss_factor, run_folder):
+        '''
+        Function for manually training the model
+        '''
+        # Save learning rate and loss weights as self variable
+        self.learning_rate = learning_rate
+        self.r_loss_factor = r_loss_factor
+
+        # Create the optimizer object
+        optimizer = Adam(learning_rate=self.learning_rate)
+
+        # Create a variable for saving the best loss model
+        prev_val_total_loss = 1e30
+
+        # Callbacks Summary writers
+        train_logdir_scalars = os.path.join(run_folder, "logs/scalars/train")
+        train_file_writer_scalars = tf.summary.create_file_writer(train_logdir_scalars,filename_suffix='train')
+
+        val_logdir_scalars = os.path.join(run_folder, "logs/scalars/val")
+        val_file_writer_scalars = tf.summary.create_file_writer(val_logdir_scalars,filename_suffix='val')
+
+        logdir_img = os.path.join(run_folder, "logs/image/")
+        file_writer_img = tf.summary.create_file_writer(logdir_img)
+
+        logdir_hist = os.path.join(run_folder, "logs/hist/")
+        file_writer_hist = tf.summary.create_file_writer(logdir_hist)
+
+        ETA_train_run = 0
+
+        for epoch in range(1, epochs + 1):
+            start_time_epoch = time.time()
+
+            # TRAIN
+            # Train metrics
+            train_total_loss  = tf.keras.metrics.Mean()
+            train_r_loss      = tf.keras.metrics.Mean()
+            train_kl_loss     = tf.keras.metrics.Mean()
+
+            # Progress bar init
+            total_batches = len(train_data_flow)
+            ETA_epoch_train = 0
+            self.print_progress_bar(0, total_batches, prefix='\nTraning    epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs trained   {}/{}. ETA_EPOCH_TRAIN: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_train)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
+
+            # Train by iterating over batches
+            for batch_number, train_data_point in enumerate(train_data_flow):
+                start_time_batch= time.time()
+
+                # Train
+                total_loss, r_loss, kl_loss = self.train_step(train_data_point, optimizer)
+
+                # Save losses in metrics
+                train_total_loss(total_loss)
+                train_r_loss(r_loss)
+                train_kl_loss(kl_loss)
+
+                # Update progress bar
+                end_time_batch= time.time()
+                ETA_epoch_train = int((end_time_batch - start_time_batch)*(total_batches - batch_number))
+                self.print_progress_bar(batch_number + 1, total_batches, prefix='Traning    epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs trained   {}/{}. ETA_EPOCH_TRAIN: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_train)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
+
+            # VALIDATION
+            # Validation metrics
+            val_total_loss  = tf.keras.metrics.Mean()
+            val_r_loss      = tf.keras.metrics.Mean()
+            val_kl_loss     = tf.keras.metrics.Mean()
+
+            # Progress bar init
+            total_batches = len(val_data_flow)
+            ETA_epoch_val = 0
+            self.print_progress_bar(0, total_batches, prefix='\nValidating epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs validated   {}/{}. ETA_EPOCH_VAL: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_val)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
+
+            # Iterate over validation set
+            for batch_number, val_data_point in enumerate(val_data_flow):
+                start_time_batch= time.time()
+
+                # Validate
+                total_loss, r_loss, kl_loss = self.compute_loss(val_data_point)
+
+                # Save losses in metrics
+                val_total_loss(total_loss)
+                val_r_loss(r_loss)
+                val_kl_loss(kl_loss)
+
+                # Update progress bar
+                end_time_batch= time.time()
+                ETA_epoch_val = int((end_time_batch - start_time_batch)*(total_batches - batch_number))
+                self.print_progress_bar(batch_number + 1, total_batches, prefix='Validating epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs validated   {}/{}. ETA_EPOCH_VAL: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_val)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
+
+            # CALLBACKS
+            # Save model callback
+            # Save model if it is better
+            if (val_total_loss.result().numpy() < prev_val_total_loss):
+                prev_val_total_loss = val_total_loss.result().numpy()
+                self.full_model.save_weights(os.path.join(run_folder, 'weights/weights.h5'))#, save_weights_only=True)
+                print('SAVED MODEL')
+
+            # Scalars Callback
+            with train_file_writer_scalars.as_default():
+                tf.summary.scalar('total_loss', train_total_loss.result(), step=epoch + initial_epoch)
+                tf.summary.scalar('r_loss', train_r_loss.result(), step=epoch + initial_epoch)
+                tf.summary.scalar('kl_loss', train_kl_loss.result(), step=epoch + initial_epoch)
+
+            with val_file_writer_scalars.as_default():
+                tf.summary.scalar('total_loss', val_total_loss.result(), step=epoch + initial_epoch)
+                tf.summary.scalar('r_loss', val_r_loss.result(), step=epoch + initial_epoch)
+                tf.summary.scalar('kl_loss', val_kl_loss.result(), step=epoch + initial_epoch)
+
+            # Image callback
+            # self.image_gen_callback(epoch + initial_epoch, val_data_flow, file_writer_img, file_writer_audio)
+            
+            # Histogram callback
+            self.hist_gen(epoch + initial_epoch, val_data_flow, file_writer_hist)
+                
+                    
+
+            # Print info for epoch
+            end_time_epoch = time.time()
+            ETA_train_run = int((end_time_epoch - start_time_epoch)*(epochs - epoch))
+            print('Epoch: {}, t_total_loss: {:10.3f}, t_mel_loss: {:10.3f}, t_r_loss: {:10.3f}, t_kl_loss: {:10.3f}, t_notes_loss: {:10.3f}, t_volume_loss: {:10.3f}, v_total_loss: {:10.3f}, v_mel_loss: {:10.3f}, v_r_loss: {:10.3f}, v_kl_loss: {:10.3f}, v_notes_loss: {:10.3f}, v_volume_loss: {:10.3f},time elapsed: {}'.format(epoch, train_total_loss.result(),train_mel_loss.result(),train_r_loss.result(),train_kl_loss.result(),train_notes_loss.result(),train_volume_loss.result(),val_total_loss.result(),val_mel_loss.result(),val_r_loss.result(),val_kl_loss.result(),val_notes_loss.result(),val_volume_loss.result(),str(datetime.timedelta(seconds=(end_time_epoch - start_time_epoch)))))       
+
+    def full_model_generate(self, input):
+        '''
+        Function for generating outputs from a trained model
+        '''
+        output = self.full_model.predict((input))
+        return output_1
+
+    def decoder_generate(self, z):
+        '''
+        Function for generating outputs from a trained model
+        '''
+        output = self.decoder.predict(z)
+        return output
+
+    def hist_gen(self, epoch, val_data_flow, file_writer_hist):
+        z = self.sampler.predict(self.encoder.predict(val_data_flow))
+        with file_writer_hist.as_default():
+            for i in range(self.model_latent_dim):
+                tf.summary.histogram("Latent_dim: "+str(i), z[:,i], step=epoch)
+
+    def image_gen_callback(self, epoch, val_data_flow, file_writer_img, file_writer_audio):
+        '''
+        Function that crates th eimage and the audios for the audio - image callback
+        '''
+        n = 0
+        image = []
+        for example in val_data_flow:
+            # Generate an example from random
+            z = tf.random.normal(shape=(1,self.model_latent_dim,), mean=0.0, stddev=0.3)
+            gen = self.decoder.predict(z)
+
+            example_in, example_out = example
+            orig = example_in
+            recon = self.full_model.predict(example_in)
+
+            image.append(self.plot_to_image(self.triple_out_to_plot(gen, orig, recon)))
+
+            n = n+1
+            if n == 9:
+                break
+
+        with file_writer_img.as_default():
+            for i in range(9):
+                tf.summary.image("Example "+str(i), image[i], step=epoch)
+
+    def triple_out_to_plot(self, gen, orig, recon):
+        '''
+        Generates 3 plots with an generated example, an original and a reconstructed
+        '''
+
+
+        # Generate plots
+        fig, ax = plt.subplots(2, 3, sharey=True,figsize=(30,4))
+
+        # Raw Gen
+        p1 = ax[0,0].imshow(gen, cmap='hot')
+        p1_t = ax[0,0].title.set_text('Raw Generated')
+        plt.colorbar(p1,ax=ax[0,0])
+
+        # Clean Gen
+        p2 = ax[1,0].imshow(self.clean_pianoroll(gen), cmap='hot')
+        p2_t = ax[1,0].title.set_text('Clean Generated')
+        plt.colorbar(p2,ax=ax[1,0])
+
+
+        # Raw Original
+        p3 = ax[0,1].imshow(orig, cmap='hot')
+        p3_t = ax[0,1].title.set_text('Raw Original')
+        plt.colorbar(p3,ax=ax[0,1])
+
+        # Clean Original
+        p4 = ax[1,1].imshow(self.clean_pianoroll(orig), cmap='hot')
+        p4_t = ax[1,1].title.set_text('Clean Original')
+        plt.colorbar(p4,ax=ax[1,1])
+
+        
+        # Raw Reconstructed
+        p5 = ax[0,2].imshow(recon, cmap='hot')
+        p5_t = ax[0,2].title.set_text('Raw Reconstructed')
+        plt.colorbar(p5,ax=ax[0,2])
+
+        # Clean Reconstructed
+        p6 = ax[1,2].imshow(self.clean_pianoroll(recon),, cmap='hot')
+        p6_t = ax[1,2].title.set_text('Clean Reconstructed')
+        plt.colorbar(p6,ax=ax[1,2])
+
+        return fig
+
+    def clean_pianoroll(self, raw_pianoroll):
+        clean_pianoroll = tf.math.floor(3*pianoroll+0.5)/3
+
+    def plot_to_image(self, figure):
+        """
+        Converts the matplotlib plot specified by 'figure' to a PNG image and
+        returns it. The supplied figure is closed and inaccessible after this call.
+        """
+        # Save the plot to a PNG in memory.
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        # Closing the figure prevents it from being displayed directly inside
+        # the notebook.
+        plt.close(figure)
+        buf.seek(0)
+        # Convert PNG buffer to TF image
+        image = tf.image.decode_png(buf.getvalue(), channels=4)
+        # Add the batch dimension
+        image = tf.expand_dims(image, 0)
+        return image
+
+
+    def print_progress_bar(self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = 'X', printEnd = "\r"):
+        '''
+        Fuction that prints a progress bar
+        '''
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+        # Print New Line on Complete
+        if iteration == total: 
+            print()
 
 if __name__ == '__main__':
     print("\n\nWelcome to TimbreNet 3 Model")
 
-    model = PianoRollModel( model_latent_dim=16,hidden_layers=3)
+    model = PianoRollModel( model_latent_dim=16, hidden_layers=2, hidden_layers_dim=32)
