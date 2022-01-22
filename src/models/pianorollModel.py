@@ -2,6 +2,7 @@ from tensorflow.keras.layers import Input, Dense, Lambda, BatchNormalization, Dr
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as keras_backend
 
+import os
 import tensorflow as tf
 
 class PianoRollModel():
@@ -9,17 +10,15 @@ class PianoRollModel():
     def __init__(
         self,
         model_latent_dim,
+        hidden_layers             =  1,
+        hidden_layers_dim         = 32,
         
         model_input_dim           = 44,
 
-        encoder_hidden_layers     =  1,
-        encoder_hidden_layers_dim = 32,
         encoder_use_batch_norm    = True,
         encoder_use_dropout       = True,
         encoder_dropout_rate      = 0.2,
 
-        decoder_hidden_layers     =  1,
-        decoder_hidden_layers_dim = 32,
         decoder_use_batch_norm    = True,
         decoder_use_dropout       = False,
         decoder_dropout_rate      = 0.2,
@@ -28,11 +27,15 @@ class PianoRollModel():
         ):
 
         # Save init arguments as self variables
+        self.model_hidden_layers       = hidden_layers
+        self.model_hidden_layers_dim   = hidden_layers_dim
+
+
         self.model_input__dim          = model_input_dim
 
         self.encoder_input_dim         = model_input_dim
-        self.encoder_hidden_layers     = encoder_hidden_layers
-        self.encoder_hidden_layers_dim = encoder_hidden_layers_dim
+        self.encoder_hidden_layers     = hidden_layers
+        self.encoder_hidden_layers_dim = hidden_layers_dim
         self.encoder_output_dim        = model_latent_dim
         self.encoder_use_batch_norm    = encoder_use_batch_norm
         self.encoder_use_dropout       = encoder_use_dropout
@@ -41,14 +44,21 @@ class PianoRollModel():
         self.model_latent_dim          = model_latent_dim
 
         self.decoder_input_dim         = model_latent_dim
-        self.decoder_hidden_layers     = decoder_hidden_layers
-        self.decoder_hidden_layers_dim = decoder_hidden_layers_dim
+        self.decoder_hidden_layers     = hidden_layers
+        self.decoder_hidden_layers_dim = hidden_layers_dim
         self.decoder_output_dim        = model_output_dim
         self.decoder_use_batch_norm    = decoder_use_batch_norm
         self.decoder_use_dropout       = decoder_use_dropout
         self.decoder_dropout_rate      = decoder_dropout_rate
 
         self.model_output_dim          = model_output_dim
+
+        # Save and create important paths 
+        self.model_path = os.path.dirname(os.path.abspath(__file__))
+        self.model_imgs_path = '{}/imgs_pianoroll/latent_{}/hidden_{}_dim_{}'.format(self.model_path, self.model_latent_dim, self.model_hidden_layers, self.model_hidden_layers_dim)
+        if os.path.exists(self.model_imgs_path) == False:
+            print("Here")
+            os.makedirs(self.model_imgs_path)
 
         # Build Model Architecture
         self._build()
@@ -93,7 +103,7 @@ class PianoRollModel():
 
         # MODEL ENCODER
         self.encoder = Model(inputs=(self.encoder_input), outputs=(self.encoder_output_mu, self.encoder_output_log_var), name='encoder')
-        tf.keras.utils.plot_model(self.encoder, to_file='encoder.png', show_shapes=True, show_dtype=False,show_layer_names=True )
+        tf.keras.utils.plot_model(self.encoder,to_file='{}/encoder.png'.format(self.model_imgs_path), show_shapes=True, show_dtype=False, show_layer_names=True )
 
     def _build_sampler(self):
         '''
@@ -115,7 +125,7 @@ class PianoRollModel():
 
         # MODEL DECODER
         self.sampler = Model(inputs=(self.sampler_input_mu, self.sampler_input_log_var), outputs=(self.sampler_output_z), name='sampler')
-        tf.keras.utils.plot_model(self.sampler, to_file='sampler.png', show_shapes=True, show_dtype=False,show_layer_names=True )
+        tf.keras.utils.plot_model(self.sampler,to_file='{}/sampler.png'.format(self.model_imgs_path), show_shapes=True, show_dtype=False, show_layer_names=True )
 
     def _build_decoder(self):
         '''
@@ -143,7 +153,7 @@ class PianoRollModel():
 
         # MODEL DECODER
         self.decoder = Model(inputs=(self.decoder_input_z), outputs=(self.decoder_output), name='decoder')
-        tf.keras.utils.plot_model(self.decoder, to_file='decoder.png', show_shapes=True, show_dtype=False,show_layer_names=True )
+        tf.keras.utils.plot_model(self.decoder,to_file='{}/decoder.png'.format(self.model_imgs_path), show_shapes=True, show_dtype=False, show_layer_names=True )
 
     def _build_full_model(self):
         '''
@@ -162,4 +172,4 @@ class PianoRollModel():
 if __name__ == '__main__':
     print("\n\nWelcome to TimbreNet 3 Model")
 
-    model = PianoRollModel(16)
+    model = PianoRollModel( model_latent_dim=16,hidden_layers=3)
