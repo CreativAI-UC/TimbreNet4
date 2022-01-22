@@ -74,7 +74,7 @@ class PianoRollModel():
         
     def _build_encoder(self):
         '''
-        Function for creating the encoder model architecture
+        Function for creating the encoder model architecture.
         '''
         # INPUT
         self.encoder_input = Input(shape=self.encoder_input_dim, name='encoder_input')
