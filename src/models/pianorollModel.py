@@ -448,7 +448,7 @@ class PianoRollModel():
         image = []
         for example in val_data_flow:
             # Generate an example from random
-            z = tf.random.normal(shape=(1,self.model_latent_dim,), mean=0.0, stddev=0.3)
+            z = tf.random.normal(shape=(1,self.model_latent_dim,), mean=0.0, stddev=1)
             gen = self.decoder.predict(z)
 
             example_in, example_out = example
