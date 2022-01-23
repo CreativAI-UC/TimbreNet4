@@ -83,14 +83,14 @@ def train(H_PARAMS):
             print('MODEL LOADED') 
 
         # DATASET
-        train_filenames = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER)))), H_PARAMS['TRAIN_DATASET']), shuffle=True, seed=H_PARAMS['SEED']).shuffle(H_PARAMS['NUM_TRAIN_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True)
-        test_filenames  = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER)))), H_PARAMS['VAL_DATASET'] ), shuffle=True, seed=H_PARAMS['SEED'])
+        train_filenames = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET']), shuffle=True, seed=H_PARAMS['SEED']).shuffle(H_PARAMS['NUM_TRAIN_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True)
+        test_filenames  = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['VAL_DATASET'] ), shuffle=True, seed=H_PARAMS['SEED'])
         
         train_dataset   = train_filenames.map(TN_VAE.pre_process_filename_to_roll).batch(H_PARAMS['BATCH_SIZE'])
         val_dataset     = test_filenames.map(TN_VAE.pre_process_filename_to_roll).batch(1)
         print('\nMODEL DATASET OK')
 
-        '''# TRAIN MODEL
+        # TRAIN MODEL
         TN_VAE.train_with_generator(
             train_data_flow  = train_dataset,
             val_data_flow    = val_dataset,
@@ -100,7 +100,7 @@ def train(H_PARAMS):
             r_loss_factor    = LOSS_FACTOR_ITEM['R_LOSS_FACTOR'],
             run_folder       = RUN_FOLDER,
             )
-'''
+
         # CONFIRM TRAIN COMPLETED
         H_PARAMS['TRAIN_COMPLETED'] = True
         with open(os.path.join(RUN_FOLDER, 'train_params.txt'), 'w') as f:
@@ -127,14 +127,14 @@ if __name__=="__main__":
         'SEED'                  :   21,
 
         'LOSS_FACTOR_SEQUENCE'  : [
-                                    {'R_LOSS_FACTOR':3  ,'N_EPOCHS': 10},
-                                    {'R_LOSS_FACTOR':2  ,'N_EPOCHS': 10},
-                                    {'R_LOSS_FACTOR':1  ,'N_EPOCHS': 30},
-                                    {'R_LOSS_FACTOR':0.2,'N_EPOCHS': 50},
-                                    {'R_LOSS_FACTOR':0.1,'N_EPOCHS': 50},
-                                    {'R_LOSS_FACTOR':0.1,'N_EPOCHS': 50},
-                                    {'R_LOSS_FACTOR':0.1,'N_EPOCHS': 50},
-                                    {'R_LOSS_FACTOR':0.1,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR':300  ,'N_EPOCHS': 10},
+                                    {'R_LOSS_FACTOR':200  ,'N_EPOCHS': 10},
+                                    {'R_LOSS_FACTOR':100  ,'N_EPOCHS': 30},
+                                    {'R_LOSS_FACTOR':20,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR':10,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR':10,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR':10,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR':10,'N_EPOCHS': 50},
                                    ],
         'LEARNING_RATE'         : 3e-5,
         'R_LOSS_FACTOR'         : None,

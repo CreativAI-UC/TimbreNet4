@@ -16,6 +16,13 @@ import matplotlib.pyplot as plt
 
 class PianoRollModel():
 
+    triad_structure_1   = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['j', 'n', 'a', 'd']), values=tf.constant([0, 0, 0, 0]),), default_value=tf.constant(-1))
+    triad_structure_3   = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['j', 'n', 'a', 'd']), values=tf.constant([4, 3, 4, 3]),), default_value=tf.constant(-1))
+    triad_structure_5   = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['j', 'n', 'a', 'd']), values=tf.constant([7, 7, 8, 6]),), default_value=tf.constant(-1))
+    base_note_structure = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['Cn', 'Df', 'Dn', 'Ef', 'En', 'Fn', 'Gf', 'Gn', 'Af', 'An', 'Bf', 'Bn']), values=tf.constant([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),), default_value=tf.constant(-1))
+    volume_structure    = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['p', 'm', 'f']), values=tf.constant([0, 1, 2]),), default_value=tf.constant(-1))
+    octave_structure    = tf.lookup.StaticHashTable(initializer=tf.lookup.KeyValueTensorInitializer(keys=tf.constant(['2', '3', '4']), values=tf.constant([3, 4, 5]),), default_value=tf.constant(-1))
+
     def __init__(
         self,
         model_latent_dim,
@@ -218,7 +225,7 @@ class PianoRollModel():
         '''
         Function that makes the pianorrolls from the filename
         '''
-        amplitude = ((tf.cast(tf.math.argmax(volume[:,0,0]),tf.float32)+1)/3) # Piano is 0.33, metsoforte is 0.66 forte is 1
+        amplitude = ((tf.cast(tf.math.argmax(volume),tf.float32)+1)/3) # Piano is 0.33, metsoforte is 0.66 forte is 1
         pianoroll = notes * amplitude
         return pianoroll
 
@@ -258,7 +265,7 @@ class PianoRollModel():
             '''
             Fuction for specgram reconstruction losss
             '''
-            r_loss = keras_backend.sum(keras_backend.square(y_true_mel_r - y_pred_mel_r), axis = [1])
+            r_loss = keras_backend.sum(keras_backend.square(y_true_r - y_pred_r), axis = [1])
             return r_loss
 
         def vae_kl_loss():
@@ -270,14 +277,14 @@ class PianoRollModel():
 
         def vae_total_loss(y_true, y_pred):
             '''
-            Function for calculating the mel spectrogram loss includon  reconstruction and KL Divergence
+            Function for calculating the pianorollloss including  reconstruction and KL Divergence
             '''
             r_loss = vae_r_loss(y_true, y_pred)
             kl_loss = vae_kl_loss()
             total_loss = (self.r_loss_factor * r_loss) + kl_loss
             return  r_loss, kl_loss, total_loss
 
-        r_loss, kl_loss, total_loss = vae_mel_loss(y_true_mel, y_pred_mel)
+        r_loss, kl_loss, total_loss = vae_total_loss(y_true, y_pred)
 
         return total_loss, r_loss, kl_loss
 
@@ -401,7 +408,7 @@ class PianoRollModel():
                 tf.summary.scalar('kl_loss', val_kl_loss.result(), step=epoch + initial_epoch)
 
             # Image callback
-            # self.image_gen_callback(epoch + initial_epoch, val_data_flow, file_writer_img, file_writer_audio)
+            self.image_gen_callback(epoch + initial_epoch, val_data_flow, file_writer_img)
             
             # Histogram callback
             self.hist_gen(epoch + initial_epoch, val_data_flow, file_writer_hist)
@@ -411,7 +418,7 @@ class PianoRollModel():
             # Print info for epoch
             end_time_epoch = time.time()
             ETA_train_run = int((end_time_epoch - start_time_epoch)*(epochs - epoch))
-            print('Epoch: {}, t_total_loss: {:10.3f}, t_mel_loss: {:10.3f}, t_r_loss: {:10.3f}, t_kl_loss: {:10.3f}, t_notes_loss: {:10.3f}, t_volume_loss: {:10.3f}, v_total_loss: {:10.3f}, v_mel_loss: {:10.3f}, v_r_loss: {:10.3f}, v_kl_loss: {:10.3f}, v_notes_loss: {:10.3f}, v_volume_loss: {:10.3f},time elapsed: {}'.format(epoch, train_total_loss.result(),train_mel_loss.result(),train_r_loss.result(),train_kl_loss.result(),train_notes_loss.result(),train_volume_loss.result(),val_total_loss.result(),val_mel_loss.result(),val_r_loss.result(),val_kl_loss.result(),val_notes_loss.result(),val_volume_loss.result(),str(datetime.timedelta(seconds=(end_time_epoch - start_time_epoch)))))       
+            print('Epoch: {}, t_total_loss: {:10.3f}, t_r_loss: {:10.3f}, t_kl_loss: {:10.3f}, v_total_loss: {:10.3f}, v_r_loss: {:10.3f}, v_kl_loss: {:10.3f},time elapsed: {}'.format(epoch, train_total_loss.result(),train_r_loss.result(),train_kl_loss.result(),val_total_loss.result(),val_r_loss.result(),val_kl_loss.result(),str(datetime.timedelta(seconds=(end_time_epoch - start_time_epoch)))))       
 
     def full_model_generate(self, input):
         '''
@@ -433,7 +440,7 @@ class PianoRollModel():
             for i in range(self.model_latent_dim):
                 tf.summary.histogram("Latent_dim: "+str(i), z[:,i], step=epoch)
 
-    def image_gen_callback(self, epoch, val_data_flow, file_writer_img, file_writer_audio):
+    def image_gen_callback(self, epoch, val_data_flow, file_writer_img):
         '''
         Function that crates th eimage and the audios for the audio - image callback
         '''
@@ -463,46 +470,68 @@ class PianoRollModel():
         Generates 3 plots with an generated example, an original and a reconstructed
         '''
 
+        raw_gen   = self.visualize_roll(gen)
+        raw_orig  = self.visualize_roll(orig)
+        raw_recon = self.visualize_roll(recon)
+
+        clean_gen   = self.visualize_roll(self.clean_pianoroll(gen))
+        clean_orig  = self.visualize_roll(self.clean_pianoroll(orig))
+        clean_recon = self.visualize_roll(self.clean_pianoroll(recon))
+
 
         # Generate plots
         fig, ax = plt.subplots(2, 3, sharey=True,figsize=(30,4))
 
         # Raw Gen
-        p1 = ax[0,0].imshow(gen, cmap='hot')
+        p1 = ax[0,0].imshow(raw_gen, cmap='hot')
         p1_t = ax[0,0].title.set_text('Raw Generated')
         plt.colorbar(p1,ax=ax[0,0])
 
         # Clean Gen
-        p2 = ax[1,0].imshow(self.clean_pianoroll(gen), cmap='hot')
+        p2 = ax[1,0].imshow(clean_gen, cmap='hot')
         p2_t = ax[1,0].title.set_text('Clean Generated')
         plt.colorbar(p2,ax=ax[1,0])
 
 
         # Raw Original
-        p3 = ax[0,1].imshow(orig, cmap='hot')
+        p3 = ax[0,1].imshow(raw_orig, cmap='hot')
         p3_t = ax[0,1].title.set_text('Raw Original')
         plt.colorbar(p3,ax=ax[0,1])
 
         # Clean Original
-        p4 = ax[1,1].imshow(self.clean_pianoroll(orig), cmap='hot')
+        p4 = ax[1,1].imshow(clean_orig, cmap='hot')
         p4_t = ax[1,1].title.set_text('Clean Original')
         plt.colorbar(p4,ax=ax[1,1])
 
         
         # Raw Reconstructed
-        p5 = ax[0,2].imshow(recon, cmap='hot')
+        p5 = ax[0,2].imshow(raw_recon, cmap='hot')
         p5_t = ax[0,2].title.set_text('Raw Reconstructed')
         plt.colorbar(p5,ax=ax[0,2])
 
         # Clean Reconstructed
-        p6 = ax[1,2].imshow(self.clean_pianoroll(recon), cmap='hot')
+        p6 = ax[1,2].imshow(clean_recon, cmap='hot')
         p6_t = ax[1,2].title.set_text('Clean Reconstructed')
         plt.colorbar(p6,ax=ax[1,2])
 
         return fig
 
+    def visualize_roll(self, pianoroll):
+        '''
+        Generates a piano over the pianorroll for visual reference
+        '''
+        visual_roll = np.repeat(pianoroll, repeats=3, axis=0)
+        visual_roll = np.append(np.zeros((1,44)),visual_roll,axis=0)
+        visual_roll = np.append((np.array([[1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1]]))*-1+1,visual_roll,axis=0)
+        return visual_roll
+
+
     def clean_pianoroll(self, raw_pianoroll):
-        clean_pianoroll = tf.math.floor(3*pianoroll+0.5)/3
+        '''
+        rounds the continous volume value to the closest volume.
+        '''
+        clean_pianoroll = np.floor(3*raw_pianoroll+0.5)/3
+        return clean_pianoroll
 
     def plot_to_image(self, figure):
         """
