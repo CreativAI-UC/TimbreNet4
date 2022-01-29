@@ -9,7 +9,7 @@ numpy_dataset = np.empty([1,44])
 
 for i in range(1000):
 	for volume in volumes:
-		structure = np.random.randint(notes, size=(3))
+		structure = np.random.choice(range(notes), 3, replace=False)
 		numpy_datapoint = volume*np.sum(np.eye(44)[structure],axis=0)
 		numpy_dataset= np.append(numpy_dataset,[numpy_datapoint], axis = 0)
 
