@@ -371,47 +371,48 @@ class PianoRollModel():
             ETA_epoch_val = 0
             self.print_progress_bar(0, total_batches, prefix='\nValidating epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs validated   {}/{}. ETA_EPOCH_VAL: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_val)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
 
-            # Iterate over validation set
-            for batch_number, val_data_point in enumerate(val_data_flow):
-                start_time_batch= time.time()
+            if epoch%10 == 0:  # Validate each 10 epochs for faster training 
+                # Iterate over validation set
+                for batch_number, val_data_point in enumerate(val_data_flow):
+                    start_time_batch= time.time()
 
-                # Validate
-                total_loss, r_loss, kl_loss = self.compute_loss(val_data_point)
+                    # Validate
+                    total_loss, r_loss, kl_loss = self.compute_loss(val_data_point)
 
-                # Save losses in metrics
-                val_total_loss(total_loss)
-                val_r_loss(r_loss)
-                val_kl_loss(kl_loss)
+                    # Save losses in metrics
+                    val_total_loss(total_loss)
+                    val_r_loss(r_loss)
+                    val_kl_loss(kl_loss)
 
-                # Update progress bar
-                end_time_batch= time.time()
-                ETA_epoch_val = int((end_time_batch - start_time_batch)*(total_batches - batch_number))
-                self.print_progress_bar(batch_number + 1, total_batches, prefix='Validating epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs validated   {}/{}. ETA_EPOCH_VAL: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_val)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
+                    # Update progress bar
+                    end_time_batch= time.time()
+                    ETA_epoch_val = int((end_time_batch - start_time_batch)*(total_batches - batch_number))
+                    self.print_progress_bar(batch_number + 1, total_batches, prefix='Validating epoch {}/{}:'.format(epoch, epochs), suffix='Complete.  Global epochs validated   {}/{}. ETA_EPOCH_VAL: {}. ETA_RUN: {}.'.format(epoch + initial_epoch, epochs + initial_epoch, str(datetime.timedelta(seconds=ETA_epoch_val)), str(datetime.timedelta(seconds=ETA_train_run))), length=50)
 
-            # CALLBACKS
-            # Save model callback
-            # Save model if it is better
-            if (val_total_loss.result().numpy() < prev_val_total_loss):
-                prev_val_total_loss = val_total_loss.result().numpy()
-                self.full_model.save_weights(os.path.join(run_folder, 'weights/weights.h5'))#, save_weights_only=True)
-                print('SAVED MODEL')
+                # CALLBACKS
+                # Save model callback
+                # Save model if it is better
+                if (val_total_loss.result().numpy() < prev_val_total_loss):
+                    prev_val_total_loss = val_total_loss.result().numpy()
+                    self.full_model.save_weights(os.path.join(run_folder, 'weights/weights.h5'))#, save_weights_only=True)
+                    print('SAVED MODEL')
 
-            # Scalars Callback
-            with train_file_writer_scalars.as_default():
-                tf.summary.scalar('total_loss', train_total_loss.result(), step=epoch + initial_epoch)
-                tf.summary.scalar('r_loss', train_r_loss.result(), step=epoch + initial_epoch)
-                tf.summary.scalar('kl_loss', train_kl_loss.result(), step=epoch + initial_epoch)
+                # Scalars Callback
+                with train_file_writer_scalars.as_default():
+                    tf.summary.scalar('total_loss', train_total_loss.result(), step=epoch + initial_epoch)
+                    tf.summary.scalar('r_loss', train_r_loss.result(), step=epoch + initial_epoch)
+                    tf.summary.scalar('kl_loss', train_kl_loss.result(), step=epoch + initial_epoch)
 
-            with val_file_writer_scalars.as_default():
-                tf.summary.scalar('total_loss', val_total_loss.result(), step=epoch + initial_epoch)
-                tf.summary.scalar('r_loss', val_r_loss.result(), step=epoch + initial_epoch)
-                tf.summary.scalar('kl_loss', val_kl_loss.result(), step=epoch + initial_epoch)
+                with val_file_writer_scalars.as_default():
+                    tf.summary.scalar('total_loss', val_total_loss.result(), step=epoch + initial_epoch)
+                    tf.summary.scalar('r_loss', val_r_loss.result(), step=epoch + initial_epoch)
+                    tf.summary.scalar('kl_loss', val_kl_loss.result(), step=epoch + initial_epoch)
 
-            # Image callback
-            self.image_gen_callback(epoch + initial_epoch, val_data_flow, file_writer_img)
-            
-            # Histogram callback
-            self.hist_gen(epoch + initial_epoch, val_data_flow, file_writer_hist)
+                # Image callback
+                self.image_gen_callback(epoch + initial_epoch, val_data_flow, file_writer_img)
+                
+                # Histogram callback
+                self.hist_gen(epoch + initial_epoch, val_data_flow, file_writer_hist)
                 
                     
 
