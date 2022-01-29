@@ -21,4 +21,4 @@ for batch_number, (val_data_point_in, val_data_point_out) in enumerate(VAL_DATAS
 
 NUMPY_DATASET = NUMPY_DATASET[1:,:]
 
-np.save(NUMPY_DATASET_PATH+'validation', NUMPY_DATASET)
+np.save(NUMPY_DATASET_PATH+'validation_roll', NUMPY_DATASET)
