@@ -4,6 +4,7 @@ import os
 import json
 import pickle
 import datetime
+import numpy as np
 import tensorflow as tf
 from distutils.dir_util import copy_tree
 from time import sleep
@@ -83,11 +84,15 @@ def train(H_PARAMS):
             print('MODEL LOADED') 
 
         # DATASET
-        train_filenames = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET']), shuffle=True, seed=H_PARAMS['SEED']).shuffle(H_PARAMS['NUM_TRAIN_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True)
-        test_filenames  = tf.data.Dataset.list_files(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['VAL_DATASET'] ), shuffle=True, seed=H_PARAMS['SEED'])
-        
-        train_dataset   = train_filenames.map(TN_VAE.pre_process_filename_to_roll).batch(H_PARAMS['BATCH_SIZE'])
-        val_dataset     = test_filenames.map(TN_VAE.pre_process_filename_to_roll).batch(1)
+        numpy_train_dataset = np.repeat(np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET']))),100, axis = 0)
+        numpy_val_dataset   = np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['VAL_DATASET'])))
+
+        train_dataset = tf.data.Dataset.from_tensor_slices((numpy_train_dataset,numpy_train_dataset)).shuffle(H_PARAMS['NUM_TRAIN_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True).batch(H_PARAMS['BATCH_SIZE'])
+        val_dataset  = tf.data.Dataset.from_tensor_slices((numpy_val_dataset, numpy_val_dataset)).shuffle(H_PARAMS['NUM_VAL_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True).batch(1)
+
+
+
+
         print('\nMODEL DATASET OK')
 
         # TRAIN MODEL
@@ -118,74 +123,79 @@ if __name__=="__main__":
 
     H_PARAMS = {
         'LATENT_DIM'            : 4,
-        'HIDDEN_LAYERS'         : 1,
-        'HIDDEN_LAYERS_DIM'     : 32,
-        'PARENT_TRAIN_ID'       : None, #'ID_2022_01_27_14_43_47',#None,
-        'TRAIN_DATASET'         : 'datasets/audioPianoTriadDataset/audio_train/*',
-        'VAL_DATASET'           : 'datasets/audioPianoTriadDataset/audio_val/*',
-        'NUM_TRAIN_EX'          :  38880,
+        'HIDDEN_LAYERS'         : 2,
+        'HIDDEN_LAYERS_DIM'     : 16,
+        'PARENT_TRAIN_ID'       : 'ID_2022_02_10_19_59_35',#None,
+        'TRAIN_DATASET'         : 'datasets/numpyDatasets/3_notes_roll_train.npy',
+        'VAL_DATASET'           : 'datasets/numpyDatasets/3_notes_roll_val.npy',
+        'NUM_TRAIN_EX'          :  76800,
+        'NUM_VAL_EX'            :  192,
         'SEED'                  :   21,
 
         'LOSS_FACTOR_SEQUENCE'  : [
-                                    {'R_LOSS_FACTOR':3000  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR':2000  ,'N_EPOCHS': 30},
-                                    {'R_LOSS_FACTOR':1000  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR':1000  ,'N_EPOCHS': 30},
-
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR':3000  ,'N_EPOCHS': 50},
+                                    #{'R_LOSS_FACTOR':2000  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR':1000  ,'N_EPOCHS': 150},
+                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
                                     
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
                                     
 
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    
 
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
 
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    
 
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
 
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
                                    ],
         'LEARNING_RATE'         : 3e-5,
         'R_LOSS_FACTOR'         : None,

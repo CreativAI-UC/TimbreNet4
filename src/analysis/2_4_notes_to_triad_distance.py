@@ -59,8 +59,8 @@ def model_get_4_note_to_triad_distance_proportion(run_path, data, verbose=False)
                                                                                     H_PARAMS['LATENT_DIM'], 
                                                                                     H_PARAMS['HIDDEN_LAYERS'], 
                                                                                     H_PARAMS['HIDDEN_LAYERS_DIM'])
-    result_str += "\n\tMEAN PROPORTION DISTANCE: {:.5f}".format(proportion_mu)
-    result_str += "\n\tSTD PROPORTION DISTANCE: {:.5f}".format(proportion_std)
+    result_str += "\n\tMEAN PROPORTION DISTANCE: \t{:.5f}".format(proportion_mu)
+    result_str += "\n\tSTD PROPORTION DISTANCE: \t{:.5f}".format(proportion_std)
 
     return result_str
 

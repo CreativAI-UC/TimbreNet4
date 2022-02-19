@@ -17,4 +17,4 @@ numpy_dataset = numpy_dataset[1:,:]
 
 CODE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 NUMPY_DATASET_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/')
-np.save(NUMPY_DATASET_PATH+'random_notes_roll', numpy_dataset)
+np.save(NUMPY_DATASET_PATH+'3_random_notes_roll', numpy_dataset)

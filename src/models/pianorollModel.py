@@ -33,11 +33,11 @@ class PianoRollModel():
 
         encoder_use_batch_norm    = True,
         encoder_use_dropout       = True,
-        encoder_dropout_rate      = 0.2,
+        encoder_dropout_rate      = 0.35,
 
         decoder_use_batch_norm    = True,
         decoder_use_dropout       = False,
-        decoder_dropout_rate      = 0.2,
+        decoder_dropout_rate      = 0.1,
 
         model_output_dim          = 44
         ):
@@ -183,6 +183,7 @@ class PianoRollModel():
         
         # MODEL FULL
         self.full_model = Model(inputs=(self.model_input), outputs=(self.model_output), name='full_model')
+
 
     def pre_process_filename_to_roll(self, path):
         '''

@@ -61,15 +61,15 @@ def model_get_acccu(run_path, data_path, verbose=False):
                                                                                     H_PARAMS['HIDDEN_LAYERS'], 
                                                                                     H_PARAMS['HIDDEN_LAYERS_DIM']) 
                                                                     
-    result_str += "\n\tFULL ACCURACY: {:.5f}   FULL PRECISION: {:.5f}".format(
+    result_str += "\n\tFULL ACCURACY: \t{:.5f}\tFULL PRECISION: \t{:.5f}".format(
                                                                     full_accuracy, 
                                                                     full_precision)
 
-    result_str += "\n\tNOTE ACCURACY: {:.5f}   NOTE PRECISION: {:.5f}".format(
+    result_str += "\n\tNOTE ACCURACY: \t{:.5f}\tNOTE PRECISION: \t{:.5f}".format(
                                                                 note_accuracy, 
                                                                 note_precision)
 
-    result_str += "\n\tAVERAGE CLEAN VS RAW DIFFERENCE: {:.5f}".format(avg_clean_raw_diff)
+    result_str += "\n\tAVERAGE CLEAN VS RAW DIFFERENCE: \t{:.5f}".format(avg_clean_raw_diff)
 
     return result_str
 
@@ -81,9 +81,9 @@ def main():
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
 
-    VAL_DATA_PATH          = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/validation_roll.npy')
+    VAL_DATA_PATH          = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll_val.npy')
     FOUR_NOTES_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
-    RANDOM_NOTES_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/random_notes_roll.npy')
+    RANDOM_NOTES_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_random_notes_roll.npy')
     
     val_result_txt          = ''
     four_notes_result_txt   = ''
