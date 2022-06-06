@@ -7,18 +7,18 @@ import tensorflow as tf
 
 
 
-def compute_accuracy_precision(data, y_pred_clean, verbose=False):
-    TP = np.sum(np.logical_and(data, y_pred_clean))
-    TN = np.sum(np.logical_and(np.logical_not(data), np.logical_not(y_pred_clean)))
-    FP = np.sum(np.logical_and(np.logical_xor(data, y_pred_clean), y_pred_clean))
-    FN = np.sum(np.logical_and(np.logical_xor(data, y_pred_clean), data))
+def compute_accuracy_precision(data_clean, y_pred_clean, verbose=False):
+    TP = np.sum(np.logical_and(data_clean, y_pred_clean))
+    TN = np.sum(np.logical_and(np.logical_not(data_clean), np.logical_not(y_pred_clean)))
+    FP = np.sum(np.logical_and(np.logical_xor(data_clean, y_pred_clean), y_pred_clean))
+    FN = np.sum(np.logical_and(np.logical_xor(data_clean, y_pred_clean), data_clean))
 
     accuracy = (TP + TN) / (TP + TN + FP + FN)
     precision = TP / (TP + FP)
 
     if verbose:
         print(' ')
-        print(np.shape(data))
+        print(np.shape(data_clean))
         print(np.shape(y_pred_clean))
         print(TP)
         print(TN)
@@ -26,9 +26,9 @@ def compute_accuracy_precision(data, y_pred_clean, verbose=False):
         print(FN)
         print(TP+TN+FP+FN)
 
-        print(data[7])
+        print(data_clean[7])
         print(y_pred_clean[7])
-        print(np.logical_and(data, y_pred_clean)[7])
+        print(np.logical_and(data_clean, y_pred_clean)[7])
 
     return accuracy, precision
 
@@ -51,9 +51,10 @@ def model_get_acccu(run_path, data_path, verbose=False):
     mu, log_var  = TN_VAE.encoder(data)
     y_pred_raw   = TN_VAE.decoder(mu) 
     y_pred_clean = TN_VAE.clean_pianoroll(y_pred_raw)
+    data_clean = TN_VAE.clean_pianoroll(data)
 
-    full_accuracy, full_precision = compute_accuracy_precision(np.eye(4)[np.array(3*data, np.int16)][:,:,1:], np.eye(4)[np.array(3*y_pred_clean, np.int16)][:,:,1:], verbose)
-    note_accuracy, note_precision = compute_accuracy_precision(np.ceil(data), np.ceil(y_pred_clean),verbose)
+    full_accuracy, full_precision = compute_accuracy_precision(np.eye(4)[np.array(3*data_clean, np.int16)][:,:,1:], np.eye(4)[np.array(3*y_pred_clean, np.int16)][:,:,1:], verbose)
+    note_accuracy, note_precision = compute_accuracy_precision(np.ceil(data_clean), np.ceil(y_pred_clean),verbose)
     avg_clean_raw_diff            = compute_avg_clean_raw_diff(y_pred_clean, y_pred_raw)
 
     result_str = "\n\nLATENT DIM: {:d}   HIDDEN LAYERS: {:d}   HIDDEN LAYERS_DIM: {:d}".format(
@@ -95,9 +96,10 @@ def main():
             RUN_PATHS = next(os.walk(os.path.join(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH),ARCHITECTURE_PATH)))[1]
             for RUN_PATH in RUN_PATHS:
                 RUN_PATH = os.path.join(os.path.join(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH),ARCHITECTURE_PATH), RUN_PATH)
-                val_result_txt          += model_get_acccu(RUN_PATH, VAL_DATA_PATH)
-                four_notes_result_txt   += model_get_acccu(RUN_PATH, FOUR_NOTES_DATA_PATH)
-                random_notes_result_txt += model_get_acccu(RUN_PATH, RANDOM_NOTES_DATA_PATH, verbose=False)
+                verbose = False
+                val_result_txt          += model_get_acccu(RUN_PATH, VAL_DATA_PATH,verbose)
+                four_notes_result_txt   += model_get_acccu(RUN_PATH, FOUR_NOTES_DATA_PATH,verbose)
+                random_notes_result_txt += model_get_acccu(RUN_PATH, RANDOM_NOTES_DATA_PATH, verbose)
 
     with open(os.path.join(CODE_PATH, 'analysis_results/1_reconstruction_accu/val_result.txt'), 'w') as text_file:
         text_file.write(val_result_txt)

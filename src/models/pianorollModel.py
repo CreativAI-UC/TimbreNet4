@@ -29,7 +29,7 @@ class PianoRollModel():
         hidden_layers             =  1,
         hidden_layers_dim         = 32,
         
-        model_input_dim           = 44,
+        model_input_dim           = 45,
 
         encoder_use_batch_norm    = True,
         encoder_use_dropout       = True,
@@ -39,7 +39,7 @@ class PianoRollModel():
         decoder_use_dropout       = False,
         decoder_dropout_rate      = 0.1,
 
-        model_output_dim          = 44
+        model_output_dim          = 45
         ):
 
         # Save init arguments as self variables
@@ -210,11 +210,11 @@ class PianoRollModel():
 
         # Make the 1/0 vectors for the model inputs
         # Notes
-        first = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_1.lookup(triad), 44)
-        third = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_3.lookup(triad), 44)
-        fifth = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_5.lookup(triad), 44)
+        first = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_1.lookup(triad), 45)
+        third = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_3.lookup(triad), 45)
+        fifth = tf.one_hot((self.octave_structure.lookup(octave)-3)*12+self.base_note_structure.lookup(base_note)+self.triad_structure_5.lookup(triad), 45)
         notes = first + third + fifth
-        notes = tf.reshape(notes,[44])
+        notes = tf.reshape(notes,[45])
 
         # Volumes
         volume = tf.one_hot(self.volume_structure.lookup(volume_meta), 3)
@@ -346,6 +346,8 @@ class PianoRollModel():
 
             # Train by iterating over batches
             for batch_number, train_data_point in enumerate(train_data_flow):
+                # print(batch_number)
+                # print(train_data_point)
                 start_time_batch= time.time()
 
                 # Train
@@ -460,11 +462,11 @@ class PianoRollModel():
             image.append(self.plot_to_image(self.triple_out_to_plot(gen, orig, recon)))
 
             n = n+1
-            if n == 9:
+            if n == 30:
                 break
 
         with file_writer_img.as_default():
-            for i in range(9):
+            for i in range(30):
                 tf.summary.image("Example "+str(i), image[i], step=epoch)
 
     def triple_out_to_plot(self, gen, orig, recon):
@@ -523,8 +525,8 @@ class PianoRollModel():
         Generates a piano over the pianorroll for visual reference
         '''
         visual_roll = np.repeat(pianoroll, repeats=3, axis=0)
-        visual_roll = np.append(np.zeros((1,44)),visual_roll,axis=0)
-        visual_roll = np.append((np.array([[1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1]]))*-1+1,visual_roll,axis=0)
+        visual_roll = np.append(np.zeros((1,45)),visual_roll,axis=0)
+        visual_roll = np.append((np.array([[1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0]]))*-1+1,visual_roll,axis=0)
         return visual_roll
 
 

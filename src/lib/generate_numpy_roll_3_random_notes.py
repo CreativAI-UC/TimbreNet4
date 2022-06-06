@@ -3,14 +3,14 @@ import os
 
 
 volumes = [1/3, 2/3, 1.0]
-notes = 44
+notes = 45
 
-numpy_dataset = np.empty([1,44])
+numpy_dataset = np.empty([1,45])
 
 for i in range(1000):
 	for volume in volumes:
 		structure = np.random.choice(range(notes), 3, replace=False)
-		numpy_datapoint = volume*np.sum(np.eye(44)[structure],axis=0)
+		numpy_datapoint = volume*np.sum(np.eye(45)[structure],axis=0)
 		numpy_dataset= np.append(numpy_dataset,[numpy_datapoint], axis = 0)
 
 numpy_dataset = numpy_dataset[1:,:]

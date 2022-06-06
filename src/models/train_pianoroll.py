@@ -58,6 +58,7 @@ def train(H_PARAMS):
             H_PARAMS['MODE'] = 'LOAD'
             with open(os.path.join(os.path.dirname(RUN_FOLDER), H_PARAMS['PARENT_TRAIN_ID'], 'train_params.txt')) as f:
                 OLD_H_PARAMS = json.load(f)
+
             H_PARAMS['INITIAL_EPOCH'] = OLD_H_PARAMS['END_EPOCH']
             H_PARAMS['END_EPOCH']     = H_PARAMS['INITIAL_EPOCH'] + LOSS_FACTOR_ITEM['N_EPOCHS']
             H_PARAMS['R_LOSS_FACTOR'] = LOSS_FACTOR_ITEM['R_LOSS_FACTOR']
@@ -84,7 +85,8 @@ def train(H_PARAMS):
             print('MODEL LOADED') 
 
         # DATASET
-        numpy_train_dataset = np.repeat(np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET']))),100, axis = 0)
+        # numpy_train_dataset = np.repeat(np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET']))),100, axis = 0)
+        numpy_train_dataset = np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['TRAIN_DATASET'])))
         numpy_val_dataset   = np.float32(np.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(RUN_FOLDER))))), H_PARAMS['VAL_DATASET'])))
 
         train_dataset = tf.data.Dataset.from_tensor_slices((numpy_train_dataset,numpy_train_dataset)).shuffle(H_PARAMS['NUM_TRAIN_EX'], seed=H_PARAMS['SEED'], reshuffle_each_iteration=True).batch(H_PARAMS['BATCH_SIZE'])
@@ -122,85 +124,25 @@ if __name__=="__main__":
     print("\n\nWelcome to TimbreNet 3 Train Script")
 
     H_PARAMS = {
-        'LATENT_DIM'            : 4,
-        'HIDDEN_LAYERS'         : 2,
-        'HIDDEN_LAYERS_DIM'     : 16,
-        'PARENT_TRAIN_ID'       : 'ID_2022_02_10_19_59_35',#None,
-        'TRAIN_DATASET'         : 'datasets/numpyDatasets/3_notes_roll_train.npy',
+        'LATENT_DIM'            : 32,
+        'HIDDEN_LAYERS'         : 1,
+        'HIDDEN_LAYERS_DIM'     : 32,
+        'PARENT_TRAIN_ID'       : None, #'ID_2022_05_23_16_05_49', #None,
+        'TRAIN_DATASET'         : 'datasets/numpyDatasets/3_notes_roll_train_augmented.npy',
         'VAL_DATASET'           : 'datasets/numpyDatasets/3_notes_roll_val.npy',
-        'NUM_TRAIN_EX'          :  76800,
-        'NUM_VAL_EX'            :  192,
+        'NUM_TRAIN_EX'          :  972000,
+        'NUM_VAL_EX'            :  45,
         'SEED'                  :   21,
 
         'LOSS_FACTOR_SEQUENCE'  : [
-                                    #{'R_LOSS_FACTOR':3000  ,'N_EPOCHS': 50},
-                                    #{'R_LOSS_FACTOR':2000  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR':1000  ,'N_EPOCHS': 150},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    {'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    
-
-                                    
-
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 100},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
-                                    #{'R_LOSS_FACTOR': 500  ,'N_EPOCHS': 20},
+                                    {'R_LOSS_FACTOR': 50  ,'N_EPOCHS': 50},
+                                    {'R_LOSS_FACTOR': 50  ,'N_EPOCHS': 50},
+                                   
                                    ],
         'LEARNING_RATE'         : 3e-5,
         'R_LOSS_FACTOR'         : None,
         'META_LOSS_FACTOR'      : None,
-        'BATCH_SIZE'            :   10,
+        'BATCH_SIZE'            :  243,
     }
 
 
