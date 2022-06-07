@@ -22,9 +22,8 @@ def explained_variance(dataset, title, CODE_FOLDER, dim, model_path = None):
 
 		data = dataset
 		mu, log_var  = TN_VAE.encoder(data)
-		y_pred_raw   = TN_VAE.decoder(mu) 
 
-		dataset = y_pred_raw
+		dataset = mu
 
 
 
@@ -39,11 +38,11 @@ def explained_variance(dataset, title, CODE_FOLDER, dim, model_path = None):
 		cumulate += i
 		cummulate_array[idx] = cumulate
 		text += "{:02d}:    ".format(idx+1)
-		text += "{:.6f}    ".format(i)
-		text += "{:.6f}\n".format(cumulate)
+		text += "{:.9f}    ".format(i)
+		text += "{:.9f}\n".format(cumulate)
 		print("{:02d}".format(idx+1), end = ':   ')
-		print("{:.6f}".format(i), end = '   ')
-		print("{:.6f}".format(cumulate))
+		print("{:.9f}".format(i), end = '   ')
+		print("{:.9f}".format(cumulate))
 	with open(os.path.join(CODE_FOLDER, 'analysis_results/1_PCA/'+title+'.txt'), 'w') as text_file:
 		text_file.write(text)
 
@@ -62,13 +61,9 @@ def main():
 	tetrad_val  = np.load(DATASET_PATH+'/4_notes_roll.npy')
 	random_val  = np.load(DATASET_PATH+'/3_random_notes_roll.npy')
 
-	triad_val_in_array  = explained_variance(triad_val,  "TRIAD_VALIDATION_IN", CODE_FOLDER, 45)
-	tetrad_val_in_array = explained_variance(tetrad_val, "TETRAD_VALIDATION_IN", CODE_FOLDER, 45)
-	random_val_in_array = explained_variance(random_val, "RANDOM_VALIDATION_IN", CODE_FOLDER, 45)
-
-	x = np.linspace(1, 45, num=45)
+	x = np.linspace(1, 32, num=32)
 	plt.figure(figsize=(8, 8), dpi=200)
-	plt.plot(x, x/45, 'k-')
+	plt.plot(x, x/32, 'k-')
 	
 	for LATENT_DIM_PATH in LATENT_DIM_PATHS:
 		ARCHITECTURE_PATHS = next(os.walk(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH)))[1]
@@ -89,19 +84,17 @@ def main():
 				elif LATENT_DIM_PATH[-2:] == '_4':
 					style = '.'
 					dim = 4
-				plt.plot(x, explained_variance(triad_val,  "TRIAD_VALIDATION_OUT_"+str(dim),  CODE_FOLDER, 45, RUN_PATH), 'b'+style, label='triad validation out ' + LATENT_DIM_PATH)
-				plt.plot(x, explained_variance(tetrad_val, "TETRAD_VALIDATION_OUT_"+str(dim), CODE_FOLDER, 45, RUN_PATH), 'r'+style, label='tetrad validation out '+ LATENT_DIM_PATH)
-				plt.plot(x, explained_variance(random_val, "RANDOM_VALIDATION_OUT_"+str(dim), CODE_FOLDER, 45, RUN_PATH), 'g'+style, label='random validation out '+ LATENT_DIM_PATH)
+				plt.plot(x[0:dim], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'b'+style, label='triad validation out ' + LATENT_DIM_PATH)
+				plt.plot(x[0:dim], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'r'+style, label='tetrad validation out '+ LATENT_DIM_PATH)
+				plt.plot(x[0:dim], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'g'+style, label='random validation out '+ LATENT_DIM_PATH)
 
-	plt.plot(x, triad_val_in_array,  'b-', label='triad validation in')
-	plt.plot(x, tetrad_val_in_array, 'r-', label='tetrad validation in')
-	plt.plot(x, random_val_in_array, 'g-', label='random validation in')
+
 
 	
 	plt.legend()
 	plt.grid()
 
-	plt.savefig(os.path.join(CODE_FOLDER, 'analysis_results/1_PCA/data_in_out_PCA_full.png'))
+	plt.savefig(os.path.join(CODE_FOLDER, 'analysis_results/1_PCA/latent_PCA_full.png'))
 	plt.show()
 
     
