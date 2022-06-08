@@ -35,11 +35,11 @@ def main():
     TRAINED_MODELS_PATH = os.path.join(CODE_PATH, 'trained_models')
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
-    THREE_NOTES_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll.npy')
-    FOUR_NOTES_DATA_PATH    = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
+    TRIAD_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll.npy')
+    TETRAD_DATA_PATH    = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
 
-    data_3_notes = np.load(THREE_NOTES_DATA_PATH)
-    data_4_notes = np.load(FOUR_NOTES_DATA_PATH)
+    data_triad = np.load(TRIAD_DATA_PATH)
+    data_tetrad = np.load(TETRAD_DATA_PATH)
 
 
     for LATENT_DIM_PATH in LATENT_DIM_PATHS:
@@ -48,14 +48,14 @@ def main():
             RUN_PATHS = next(os.walk(os.path.join(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH),ARCHITECTURE_PATH)))[1]
             for RUN_PATH in RUN_PATHS:
                 RUN_PATH = os.path.join(os.path.join(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH),ARCHITECTURE_PATH), RUN_PATH)
-                data_3, latent_3 = model_get_chord_latent_pair(RUN_PATH, data_3_notes)
-                data_4, latent_4 = model_get_chord_latent_pair(RUN_PATH, data_4_notes)
+                chord_triad, latent_triad = model_get_chord_latent_pair(RUN_PATH, data_triad)
+                chord_tetrad, latent_tetrad = model_get_chord_latent_pair(RUN_PATH, data_tetrad)
 
-                np.save(RUN_PATH+'/3_notes_chords', data_3)
-                np.save(RUN_PATH+'/3_notes_latent', latent_3)
+                np.save(RUN_PATH+'/triad_chord', chord_triad)
+                np.save(RUN_PATH+'/triad_latent', latent_triad)
 
-                np.save(RUN_PATH+'/4_notes_chords', data_4)
-                np.save(RUN_PATH+'/4_notes_latent', latent_4)
+                np.save(RUN_PATH+'/tetrad_chord', chord_tetrad)
+                np.save(RUN_PATH+'/tetrad_latent', latent_tetrad)
 
 
 
