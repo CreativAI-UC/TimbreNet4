@@ -58,9 +58,9 @@ def main():
 
     
 	DATASET_PATH = os.path.join(os.path.dirname(CODE_FOLDER),'datasets/numpyDatasets')
-	triad_val   = np.load(DATASET_PATH+'/3_notes_roll_val.npy')
-	tetrad_val  = np.load(DATASET_PATH+'/4_notes_roll.npy')
-	random_val  = np.load(DATASET_PATH+'/3_random_notes_roll.npy')
+	triad_val   = np.load(DATASET_PATH+'/triad_val.npy')
+	tetrad_val  = np.load(DATASET_PATH+'/tetrad_val.npy')
+	random_val  = np.load(DATASET_PATH+'/random_val.npy')
 
 	triad_val_in_array  = explained_variance(triad_val,  "TRIAD_VALIDATION_IN", CODE_FOLDER, 45)
 	tetrad_val_in_array = explained_variance(tetrad_val, "TETRAD_VALIDATION_IN", CODE_FOLDER, 45)

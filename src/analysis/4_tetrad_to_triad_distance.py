@@ -68,7 +68,7 @@ def main():
     TRAINED_MODELS_PATH = os.path.join(CODE_PATH, 'trained_models')
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
-    TETRAD_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
+    TETRAD_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/tetrad_val.npy')
 
     data_tetrad = np.load(TETRAD_DATA_PATH)
     data_parent_triad_1, data_parent_triad_2 = get_parent_triads(data_tetrad)

@@ -86,9 +86,9 @@ def main():
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
 
-    TRIAD_DATA_PATH  = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll_val.npy')
-    TETRAD_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
-    RANDOM_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_random_notes_roll.npy')
+    TRIAD_DATA_PATH  = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/triad_val.npy')
+    TETRAD_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/tetrad_val.npy')
+    RANDOM_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/random_val.npy')
     
     triad_result_txt  = ''
     tetrad_result_txt = ''

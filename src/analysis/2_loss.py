@@ -50,9 +50,9 @@ def main():
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
 
-    VAL_DATA_PATH          = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll_val.npy')
-    FOUR_NOTES_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
-    RANDOM_NOTES_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_random_notes_roll.npy')
+    VAL_DATA_PATH          = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/triad_val.npy')
+    FOUR_NOTES_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/tetrad_val.npy')
+    RANDOM_NOTES_DATA_PATH = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/random_val.npy')
     
     val_result_txt          = ''
     four_notes_result_txt   = ''
@@ -69,13 +69,13 @@ def main():
                 four_notes_result_txt   += model_get_losses(RUN_PATH, FOUR_NOTES_DATA_PATH)
                 random_notes_result_txt += model_get_losses(RUN_PATH, RANDOM_NOTES_DATA_PATH)
 
-    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/val_result.txt'), 'w') as text_file:
+    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/triad_result.txt'), 'w') as text_file:
         text_file.write(val_result_txt)
 
-    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/four_notes_result.txt'), 'w') as text_file:
+    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/tetrad_result.txt'), 'w') as text_file:
         text_file.write(four_notes_result_txt)
     
-    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/random_notes_result.txt'), 'w') as text_file:
+    with open(os.path.join(CODE_PATH, 'analysis_results/2_losses/random_result.txt'), 'w') as text_file:
         text_file.write(random_notes_result_txt)
 
 

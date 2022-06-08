@@ -57,9 +57,9 @@ def main():
 
     
 	DATASET_PATH = os.path.join(os.path.dirname(CODE_FOLDER),'datasets/numpyDatasets')
-	triad_val   = np.load(DATASET_PATH+'/3_notes_roll_val.npy')
-	tetrad_val  = np.load(DATASET_PATH+'/4_notes_roll.npy')
-	random_val  = np.load(DATASET_PATH+'/3_random_notes_roll.npy')
+	triad_val   = np.load(DATASET_PATH+'/triad_val.npy')
+	tetrad_val  = np.load(DATASET_PATH+'/tetrad_val.npy')
+	random_val  = np.load(DATASET_PATH+'/random_val.npy')
 
 	x = np.linspace(1, 32, num=32)
 	plt.figure(figsize=(8, 8), dpi=200)
