@@ -35,8 +35,8 @@ def main():
     TRAINED_MODELS_PATH = os.path.join(CODE_PATH, 'trained_models')
     LATENT_DIM_PATHS    = next(os.walk(TRAINED_MODELS_PATH))[1]
 
-    TRIAD_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/3_notes_roll.npy')
-    TETRAD_DATA_PATH    = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/4_notes_roll.npy')
+    TRIAD_DATA_PATH   = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/triad_dataset.npy')
+    TETRAD_DATA_PATH    = os.path.join(os.path.dirname(CODE_PATH),'datasets/numpyDatasets/tetrad_val.npy')
 
     data_triad = np.load(TRIAD_DATA_PATH)
     data_tetrad = np.load(TETRAD_DATA_PATH)
