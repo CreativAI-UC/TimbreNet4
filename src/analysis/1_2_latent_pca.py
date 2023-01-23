@@ -33,10 +33,10 @@ def explained_variance(dataset, title, CODE_FOLDER, dim, model_path = None):
 	pca = PCA(n_components=dim)
 	principalComponents = pca.fit_transform(dataset)
 	cumulate = 0
-	cummulate_array = np.zeros(dim)
+	cummulate_array = np.zeros(dim+1)
 	for idx, i in enumerate(pca.explained_variance_ratio_):
 		cumulate += i
-		cummulate_array[idx] = cumulate
+		cummulate_array[idx+1] = cumulate
 		text += "{:02d}:    ".format(idx+1)
 		text += "{:.9f}    ".format(i)
 		text += "{:.9f}\n".format(cumulate)
@@ -61,9 +61,23 @@ def main():
 	tetrad_val  = np.load(DATASET_PATH+'/tetrad_val.npy')
 	random_val  = np.load(DATASET_PATH+'/random_val.npy')
 
-	x = np.linspace(1, 32, num=32)
-	plt.figure(figsize=(8, 8), dpi=200)
-	plt.plot(x, x/32, 'k-')
+	x = np.linspace(0, 32, num=33)
+	fig, axs = plt.subplots(2, 2)
+	fig.set_size_inches(7, 7)
+	#fig.suptitle('Latent Space PCA Analysis')
+
+
+
+	axs[0,0].set_title('4 Latent Dimensions Model')
+	axs[0,1].set_title('8 Latent Dimensions Model')
+	axs[1,0].set_title('16 Latent Dimensions Model')
+	axs[1,1].set_title('32 Latent Dimensions Model')
+
+	axs[0,0].set(xlabel='Component Number', ylabel='Cumulate Variance')
+	axs[0,1].set(xlabel='Component Number', ylabel='Cumulate Variance')
+	axs[1,0].set(xlabel='Component Number', ylabel='Cumulate Variance')
+	axs[1,1].set(xlabel='Component Number', ylabel='Cumulate Variance')
+
 	
 	for LATENT_DIM_PATH in LATENT_DIM_PATHS:
 		ARCHITECTURE_PATHS = next(os.walk(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH)))[1]
@@ -73,31 +87,69 @@ def main():
 				RUN_PATH = os.path.join(os.path.join(os.path.join(TRAINED_MODELS_PATH, LATENT_DIM_PATH),ARCHITECTURE_PATH), RUN_PATH)
 				print(LATENT_DIM_PATH[-2:])
 				if LATENT_DIM_PATH[-2:] == '32':
-					style = '--'
 					dim = 32
+					axs[1,1].plot(x[0:dim+1], x[0:dim+1]/dim, 'k-')
+					axs[1,1].plot(x[0:dim+1], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'y:', label='triad validation latent space')
+					axs[1,1].plot(x[0:dim+1], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'y-.', label='tetrad validation latent space')
+					axs[1,1].plot(x[0:dim+1], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'y-', label='random validation latent space')
 				elif LATENT_DIM_PATH[-2:] == '16':
-					style = '-.'
 					dim = 16
+					axs[1,0].plot(x[0:dim+1], x[0:dim+1]/dim, 'k-')
+					axs[1,0].plot(x[0:dim+1], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'g:', label='triad validation latent space')
+					axs[1,0].plot(x[0:dim+1], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'g-.', label='tetrad validation latent space')
+					axs[1,0].plot(x[0:dim+1], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'g-', label='random validation latent space')
 				elif LATENT_DIM_PATH[-2:] == '_8':
-					style = ':'
 					dim = 8
+					axs[0,1].plot(x[0:dim+1], x[0:dim+1]/dim, 'k-')
+					axs[0,1].plot(x[0:dim+1], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'r:', label='triad validation latent space')
+					axs[0,1].plot(x[0:dim+1], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'r-.', label='tetrad validation latent space')
+					axs[0,1].plot(x[0:dim+1], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'r-', label='random validation latent space')
 				elif LATENT_DIM_PATH[-2:] == '_4':
-					style = '.'
 					dim = 4
-				plt.plot(x[0:dim], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'b'+style, label='triad validation out ' + LATENT_DIM_PATH)
-				plt.plot(x[0:dim], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'r'+style, label='tetrad validation out '+ LATENT_DIM_PATH)
-				plt.plot(x[0:dim], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'g'+style, label='random validation out '+ LATENT_DIM_PATH)
+					axs[0,0].plot(x[0:dim+1], x[0:dim+1]/dim, 'k-')
+					axs[0,0].plot(x[0:dim+1], explained_variance(triad_val,  "TRIAD_VALIDATION_LATENT_"+str(dim),  CODE_FOLDER, dim, RUN_PATH), 'b:', label='triad validation latent space')
+					axs[0,0].plot(x[0:dim+1], explained_variance(tetrad_val, "TETRAD_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'b-.', label='tetrad validation latent space')
+					axs[0,0].plot(x[0:dim+1], explained_variance(random_val, "RANDOM_VALIDATION_LATENT_"+str(dim), CODE_FOLDER, dim, RUN_PATH), 'b-', label='random validation latent space')
+				
 
 
 
 	
-	plt.legend()
-	plt.grid()
+	axs[0,0].legend(loc='lower right', fontsize=6)
+	axs[0,1].legend(loc='lower right', fontsize=6)
+	axs[1,0].legend(loc='lower right', fontsize=6)
+	axs[1,1].legend(loc='lower right', fontsize=6)
+	axs[0,0].grid()
+	axs[0,1].grid()
+	axs[1,0].grid()
+	axs[1,1].grid()
 
-	plt.savefig(os.path.join(CODE_FOLDER, 'analysis_results/1_PCA/latent_PCA_full.png'))
+	box = axs[0,0].get_position()
+	box.y0 = box.y0 + 0.03
+	box.y1 = box.y1 + 0.03
+	axs[0,0].set_position(box)
+
+	box = axs[0,1].get_position()
+	box.y0 = box.y0 + 0.03
+	box.y1 = box.y1 + 0.03
+	axs[0,1].set_position(box)
+
+
+	box = axs[1,0].get_position()
+	box.y0 = box.y0 - 0.03
+	box.y1 = box.y1 - 0.03
+	axs[1,0].set_position(box)
+
+	box = axs[1,1].get_position()
+	box.y0 = box.y0 - 0.03
+	box.y1 = box.y1 - 0.03
+	axs[1,1].set_position(box)
+
+
+	fig.savefig(os.path.join(CODE_FOLDER, 'analysis_results/1_PCA/pca_latent.png'), dpi=200)
 	plt.show()
 
-    
+
 
 
 
